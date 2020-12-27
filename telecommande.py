@@ -1,45 +1,66 @@
 # Add your Python code here. E.g.
 from microbit import *
 import radio
-display.scroll('1')
+display.scroll('4')
 radio.on()
-#reading = accelerometer.get_x()_
+
+def send_speeds(leftspeed,rightspeed):
+    cmd = bytearray()
+    cmd += abs(leftspeed).to_bytes(2,'little')
+    if leftspeed < 0:
+        cmd += b'\x01'
+    else:
+        cmd += b'\x00'
+    cmd += abs(rightspeed).to_bytes(2,'little')
+    if rightspeed < 0:
+        cmd += b'\x01'
+    else:
+        cmd += b'\x00'
+    radio.send_bytes(cmd)
+
 left=False
 right=False
 back = False
 stopped = False
+speed = 1000
 while True:
     if button_a.was_pressed():
         display.show(Image.HAPPY)
         if right:
-            radio.send('forward')
+            send_speeds(speed,speed) # forward
             right=False
         else:
-            radio.send('left')
+            send_speeds(0,speed) # left turn
             left=True
     elif button_b.was_pressed():
         display.show(Image.SAD)
         if left:
-            radio.send('forward')
+            send_speeds(speed,speed) # forward
             left=False
         else:
-            radio.send('right')
+            send_speeds(speed,0) # right turn
             right=True
     elif pin_logo.is_touched():
         display.show(Image.HEART)
         if back :
-            radio.send('forward')
+            send_speeds(speed,speed) # forward
             back = False
-        else :
-            radio.send('backward')
+        else:
+            send_speeds(-speed, -speed) # backward
             back = True
+        sleep(700)
+        display.clear()
+        sleep(300)
     else:
         gesture = accelerometer.current_gesture()
         if gesture == "shake":
             display.show(Image.TRIANGLE)
             if stopped:
-                radio.send('forward')
+                send_speeds(speed,speed) # forward
                 stopped = False
             else:
-                radio.send('stop')
+                send_speeds(0, 0)  # stop
                 stopped = True
+            sleep(700)
+            display.clear()
+            sleep(300)
